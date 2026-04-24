@@ -1,0 +1,237 @@
+/* ==========================================================================
+   Techno Genius / Techno Ops OS — Design Tokens
+   Professional instructor-facing dashboard + parent-facing PDF
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+
+:root {
+  /* ---------- BRAND COLORS ----------
+     The Techno Genius logo uses orange + navy. The existing parent PDF
+     template uses green as the header color (signalling growth/progress).
+     The OPERATOR dashboard uses green sparingly (CTAs, active, success),
+     orange is reserved for brand/parent-facing surfaces + warnings.
+  */
+
+  /* Primary — Academy green. Single source of truth for CTAs, active states. */
+  --green-50:  #EBF7F0;
+  --green-100: #D0ECDB;
+  --green-200: #A2D9B7;
+  --green-300: #6EC38D;
+  --green-400: #46AE6F;
+  --green-500: #2E9E5A;  /* brand primary */
+  --green-600: #24834A;
+  --green-700: #1C6739;
+  --green-800: #154C2B;
+  --green-900: #0D321D;
+
+  /* Brand orange — mascot / parent-facing warmth / warning */
+  --orange-50:  #FFF3EB;
+  --orange-100: #FFE1CC;
+  --orange-200: #FFC299;
+  --orange-300: #FFA266;
+  --orange-400: #FF8C42;  /* mascot */
+  --orange-500: #F57520;
+  --orange-600: #D85E10;
+  --orange-700: #A84808;
+
+  /* Navy — wordmark color, used for headings on light surfaces */
+  --navy-900: #1E2A3C;
+  --navy-800: #263448;
+  --navy-700: #334259;
+
+  /* ---------- NEUTRALS (cool slate, Linear-ish) ---------- */
+  --slate-0:   #FFFFFF;
+  --slate-25:  #FBFCFD;  /* app chrome background */
+  --slate-50:  #F6F8FA;  /* subtle row stripe */
+  --slate-100: #EEF1F4;
+  --slate-150: #E3E7EC;  /* borders */
+  --slate-200: #D4D9E0;
+  --slate-300: #B3BAC5;
+  --slate-400: #8A93A1;  /* muted icon */
+  --slate-500: #6B7584;  /* secondary text */
+  --slate-600: #505968;
+  --slate-700: #3B4351;
+  --slate-800: #262B36;  /* primary text */
+  --slate-900: #151921;
+
+  /* ---------- SEMANTIC ---------- */
+  --success: var(--green-500);
+  --success-bg: var(--green-50);
+  --success-border: var(--green-200);
+
+  --warning: #C77A08;
+  --warning-bg: #FEF5E7;
+  --warning-border: #F6D58A;
+
+  --danger: #C4321A;
+  --danger-bg: #FDECE8;
+  --danger-border: #F1B2A4;
+
+  --info: #1F6FCB;
+  --info-bg: #E8F1FC;
+  --info-border: #A8C7ED;
+
+  /* ---------- SURFACE / FG ROLES ---------- */
+  --bg-app:      var(--slate-25);
+  --bg-surface:  var(--slate-0);
+  --bg-sunken:   var(--slate-50);
+  --bg-hover:    var(--slate-100);
+  --bg-active:   var(--slate-150);
+
+  --fg-1: var(--slate-800);   /* body text */
+  --fg-2: var(--slate-500);   /* secondary */
+  --fg-3: var(--slate-400);   /* tertiary / placeholder */
+  --fg-inv: var(--slate-0);
+
+  --border-1: var(--slate-150);  /* default hairline */
+  --border-2: var(--slate-200);  /* stronger */
+  --border-focus: var(--green-500);
+
+  --accent:    var(--green-500);
+  --accent-hover: var(--green-600);
+  --accent-active: var(--green-700);
+  --accent-soft: var(--green-50);
+
+  /* ---------- TYPE FAMILIES ---------- */
+  --font-sans:   'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-arabic: 'Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', sans-serif;
+  --font-mono:   'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --font-display: 'Inter', system-ui, sans-serif; /* Inter Display weights */
+
+  /* ---------- TYPE SCALE (dense instructor tool) ----------
+     Slightly tighter than consumer SaaS. 13px body is intentional.
+  */
+  --fs-2xs:  11px;  /* table meta, pill labels */
+  --fs-xs:   12px;  /* column headers, tags */
+  --fs-sm:   13px;  /* BASE BODY for dense UI */
+  --fs-base: 14px;  /* forms, paragraphs */
+  --fs-md:   16px;  /* emphasis body */
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+  --fs-2xl:  28px;  /* page h1 */
+  --fs-3xl:  34px;  /* kpi number */
+  --fs-4xl:  44px;  /* kpi hero */
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.35;
+  --lh-normal: 1.5;
+  --lh-loose:  1.7;  /* Arabic benefits from looser */
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:  0.04em;
+  --tracking-caps:  0.08em;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --sp-0:  0;
+  --sp-1:  2px;
+  --sp-2:  4px;
+  --sp-3:  6px;
+  --sp-4:  8px;
+  --sp-5:  10px;
+  --sp-6:  12px;
+  --sp-7:  14px;
+  --sp-8:  16px;
+  --sp-10: 20px;
+  --sp-12: 24px;
+  --sp-16: 32px;
+  --sp-20: 40px;
+  --sp-24: 48px;
+  --sp-32: 64px;
+
+  /* ---------- RADIUS ---------- */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 7px;   /* default card/input */
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --r-pill: 999px;
+
+  /* ---------- SHADOWS (restrained, thin) ---------- */
+  --shadow-xs: 0 1px 0 rgba(15, 23, 36, 0.04);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 36, 0.05), 0 0 0 1px rgba(15, 23, 36, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 36, 0.06), 0 0 0 1px rgba(15, 23, 36, 0.05);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 36, 0.10), 0 0 0 1px rgba(15, 23, 36, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(46, 158, 90, 0.22);
+  --shadow-focus-danger: 0 0 0 3px rgba(196, 50, 26, 0.22);
+
+  /* ---------- MOTION ---------- */
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in-out: cubic-bezier(.4,0,.2,1);
+  --dur-fast: 120ms;
+  --dur-med:  180ms;
+  --dur-slow: 280ms;
+
+  /* ---------- Z ---------- */
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-modal:    500;
+  --z-toast:    800;
+}
+
+/* ==========================================================================
+   SEMANTIC TYPOGRAPHY CLASSES
+   ========================================================================== */
+html { font-family: var(--font-sans); font-size: var(--fs-sm); color: var(--fg-1); }
+html[dir="rtl"], .rtl { font-family: var(--font-arabic); }
+
+/* Latin display for page titles */
+.t-display {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--navy-900);
+}
+
+.t-h1 { font-size: var(--fs-xl); font-weight: 600; line-height: var(--lh-snug); color: var(--navy-900); letter-spacing: var(--tracking-tight); }
+.t-h2 { font-size: var(--fs-lg); font-weight: 600; line-height: var(--lh-snug); color: var(--navy-900); }
+.t-h3 { font-size: var(--fs-md); font-weight: 600; line-height: var(--lh-snug); color: var(--fg-1); }
+.t-body { font-size: var(--fs-sm); line-height: var(--lh-normal); color: var(--fg-1); }
+.t-body-lg { font-size: var(--fs-base); line-height: var(--lh-normal); color: var(--fg-1); }
+.t-muted { color: var(--fg-2); }
+.t-meta  { font-size: var(--fs-xs); color: var(--fg-2); line-height: var(--lh-snug); }
+.t-overline {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.t-mono { font-family: var(--font-mono); font-size: 12px; }
+.t-kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-1);
+  border-bottom-width: 2px;
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  color: var(--fg-2);
+}
+
+/* KPI number */
+.t-kpi {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  color: var(--navy-900);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Arabic counterparts — slightly larger + looser, because Cairo reads smaller */
+.t-ar-body   { font-family: var(--font-arabic); font-size: 15px; line-height: var(--lh-loose); color: var(--fg-1); }
+.t-ar-h1     { font-family: var(--font-arabic); font-size: 22px; line-height: 1.4;  font-weight: 700; color: var(--navy-900); }
+.t-ar-h2     { font-family: var(--font-arabic); font-size: 18px; line-height: 1.4;  font-weight: 700; color: var(--navy-900); }
+.t-ar-display{ font-family: var(--font-arabic); font-size: 32px; line-height: 1.25; font-weight: 800; color: var(--navy-900); }
+
+/* ==========================================================================
+   BASE RESET bits (safe to import globally)
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-app); color: var(--fg-1); font-family: var(--font-sans); font-size: var(--fs-sm); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }

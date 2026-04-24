@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTRL — Techno Genius RC Controller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #070908;
+    color: #E6EEEA;
+    overflow: hidden;
+    height: 100vh;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* Ambient backdrop */
+  .stage {
+    position: fixed; inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(ellipse 60% 40% at 30% 20%, rgba(0,229,160,0.06), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 80% 90%, rgba(59,158,255,0.05), transparent 60%),
+      #070908;
+  }
+
+  /* Grid overlay */
+  .stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse 80% 60% at center, black 30%, transparent 100%);
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="ctrl-icons.jsx"></script>
+<script type="text/babel" src="ctrl-header.jsx"></script>
+<script type="text/babel" src="ctrl-drive.jsx"></script>
+<script type="text/babel" src="ctrl-arm.jsx"></script>
+<script type="text/babel" src="ctrl-terminal.jsx"></script>
+<script type="text/babel" src="ctrl-app.jsx"></script>
+</body>
+</html>
