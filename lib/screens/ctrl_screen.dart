@@ -13,6 +13,19 @@ class CtrlScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    return isLandscape ? const _LandscapeLayout() : const _PortraitLayout();
+  }
+}
+
+// ─── Portrait ────────────────────────────────────────────────────────────────
+
+class _PortraitLayout extends StatelessWidget {
+  const _PortraitLayout();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -24,15 +37,65 @@ class CtrlScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Consumer<CtrlNotifier>(
-                    builder: (_, notifier, __) =>
-                        notifier.tab == 'drive'
-                            ? const DriveTab()
-                            : const ArmTab(),
+                    builder: (_, n, __) =>
+                        n.tab == 'drive' ? const DriveTab() : const ArmTab(),
                   ),
+                  const SizedBox(height: 8),
                   const TerminalWidget(),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Landscape ───────────────────────────────────────────────────────────────
+
+class _LandscapeLayout extends StatelessWidget {
+  const _LandscapeLayout();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          const CtrlHeader(),
+          const CtrlTabBar(),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Controls pane (left, scrollable)
+                Expanded(
+                  flex: 6,
+                  child: SingleChildScrollView(
+                    child: Consumer<CtrlNotifier>(
+                      builder: (_, n, __) =>
+                          n.tab == 'drive' ? const DriveTab() : const ArmTab(),
+                    ),
+                  ),
+                ),
+                // Divider
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: AppColors.border,
+                ),
+                // Terminal pane (right, expanded)
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    children: const [
+                      TerminalWidget(expand: true),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

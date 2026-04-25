@@ -6,7 +6,9 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
 class TerminalWidget extends StatefulWidget {
-  const TerminalWidget({super.key});
+  /// When [expand] is true the log body fills available height (landscape).
+  final bool expand;
+  const TerminalWidget({super.key, this.expand = false});
 
   @override
   State<TerminalWidget> createState() => _TerminalWidgetState();
@@ -73,6 +75,7 @@ class _TerminalWidgetState extends State<TerminalWidget>
             logs: logs,
             scrollCtrl: _scrollCtrl,
             blinkCtrl: _blinkCtrl,
+            expand: widget.expand,
           ),
           _InputRow(
             ctrl: _inputCtrl,
@@ -156,11 +159,13 @@ class _LogBody extends StatelessWidget {
   final List<LogEntry> logs;
   final ScrollController scrollCtrl;
   final AnimationController blinkCtrl;
+  final bool expand;
 
   const _LogBody({
     required this.logs,
     required this.scrollCtrl,
     required this.blinkCtrl,
+    this.expand = false,
   });
 
   static Color _color(LogType t) => switch (t) {
@@ -179,63 +184,58 @@ class _LogBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 120,
-      child: ListView.builder(
-        controller: scrollCtrl,
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-        itemCount: logs.length + 1, // +1 for blinking cursor row
-        itemBuilder: (_, i) {
-          if (i == logs.length) {
-            // Blinking cursor
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: FadeTransition(
-                opacity: blinkCtrl,
-                child: Container(
-                  width: 7,
-                  height: 11,
-                  color: AppColors.accent,
-                ),
-              ),
-            );
-          }
-          final log = logs[i];
-          final color = _color(log.type);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 1),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  log.ts,
-                  style: AppText.mono(
-                    fontSize: 9,
-                    color: AppColors.textMuted.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 12,
-                  child: Text(
-                    _prefix(log.type),
-                    textAlign: TextAlign.center,
-                    style: AppText.mono(fontSize: 11, color: color),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    log.msg,
-                    style: AppText.mono(fontSize: 11, color: color),
-                  ),
-                ),
-              ],
+    final listView = ListView.builder(
+      controller: scrollCtrl,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      itemCount: logs.length + 1,
+      itemBuilder: (_, i) {
+        if (i == logs.length) {
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: FadeTransition(
+              opacity: blinkCtrl,
+              child: Container(width: 7, height: 11, color: AppColors.accent),
             ),
           );
-        },
-      ),
+        }
+        final log = logs[i];
+        final color = _color(log.type);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 1),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                log.ts,
+                style: AppText.mono(
+                  fontSize: 9,
+                  color: AppColors.textMuted.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 12,
+                child: Text(
+                  _prefix(log.type),
+                  textAlign: TextAlign.center,
+                  style: AppText.mono(fontSize: 11, color: color),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  log.msg,
+                  style: AppText.mono(fontSize: 11, color: color),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
+
+    if (expand) return Expanded(child: listView);
+    return SizedBox(height: 120, child: listView);
   }
 }
 

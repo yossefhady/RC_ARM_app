@@ -1,25 +1,49 @@
 import 'dart:async';
 import 'dart:math';
+import '../models/ble_scan_result.dart';
 import 'ble_service.dart';
+
+const _fakeDevices = [
+  BleScanResult(deviceId: 'AA:BB:CC:DD:EE:01', name: 'ESP32-CTRL', rssi: -42),
+  BleScanResult(deviceId: 'AA:BB:CC:DD:EE:02', name: 'ESP32-ARM-01', rssi: -61),
+  BleScanResult(deviceId: 'FF:FF:FF:FF:FF:00', name: 'Galaxy Buds', rssi: -78),
+];
 
 class MockBleService implements BleService {
   final _connController = StreamController<bool>.broadcast();
   final _respController = StreamController<String>.broadcast();
+  final _scanController = StreamController<List<BleScanResult>>.broadcast();
   final _rng = Random();
   bool _connected = false;
+  final List<BleScanResult> _discovered = [];
+
+  @override Stream<bool> get connectionStream => _connController.stream;
+  @override Stream<String> get responseStream => _respController.stream;
+  @override Stream<List<BleScanResult>> get scanStream => _scanController.stream;
+  @override bool get isConnected => _connected;
 
   @override
-  Stream<bool> get connectionStream => _connController.stream;
+  Future<void> startScan() async {
+    // Returns immediately; devices appear via scanStream asynchronously.
+    _discovered.clear();
+    _emitDevicesAsync();
+  }
+
+  void _emitDevicesAsync() async {
+    for (final dev in _fakeDevices) {
+      await Future<void>.delayed(Duration(milliseconds: 500 + _rng.nextInt(700)));
+      if (_scanController.isClosed) return;
+      _discovered.add(dev);
+      _scanController.add(List.unmodifiable(_discovered));
+    }
+  }
 
   @override
-  Stream<String> get responseStream => _respController.stream;
+  Future<void> stopScan() async {}
 
   @override
-  bool get isConnected => _connected;
-
-  @override
-  Future<void> connect() async {
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+  Future<void> connectTo(BleScanResult device) async {
+    await Future<void>.delayed(const Duration(milliseconds: 700));
     _connected = true;
     _connController.add(true);
     await Future<void>.delayed(const Duration(milliseconds: 80));
@@ -35,8 +59,7 @@ class MockBleService implements BleService {
   @override
   Future<void> sendCommand(String command) async {
     if (!_connected) return;
-    final delay = 80 + _rng.nextInt(80);
-    await Future<void>.delayed(Duration(milliseconds: delay));
+    await Future<void>.delayed(Duration(milliseconds: 80 + _rng.nextInt(80)));
     _respController.add(_respond(command));
   }
 
@@ -54,7 +77,6 @@ class MockBleService implements BleService {
       return 'OK · moving to $label';
     }
     if (lower.startsWith('arm_home')) return 'OK · servos aligned 90°';
-    if (lower.startsWith('err')) return 'ERROR · unknown command';
     return 'OK';
   }
 
@@ -62,5 +84,6 @@ class MockBleService implements BleService {
   void dispose() {
     _connController.close();
     _respController.close();
+    _scanController.close();
   }
 }

@@ -3,13 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/ctrl_notifier.dart';
 import 'screens/ctrl_screen.dart';
-import 'services/mock_ble_service.dart';
-// To use real BLE, swap MockBleService with RealBleService:
-//   import 'services/real_ble_service.dart';
+import 'services/real_ble_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -26,7 +28,7 @@ class CtrlApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CtrlNotifier(MockBleService()),
+      create: (_) => CtrlNotifier(RealBleService()),
       child: MaterialApp(
         title: 'CTRL',
         debugShowCheckedModeBanner: false,

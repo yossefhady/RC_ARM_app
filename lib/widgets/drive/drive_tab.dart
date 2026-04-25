@@ -6,6 +6,7 @@ import '../../providers/ctrl_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../animated_number.dart';
+import 'joystick_widget.dart';
 
 class DriveTab extends StatelessWidget {
   const DriveTab({super.key});
@@ -19,9 +20,9 @@ class DriveTab extends StatelessWidget {
         children: [
           _SpeedSlider(),
           SizedBox(height: 14),
-          _DPad(),
+          _DirectionSection(),
           SizedBox(height: 14),
-          _ModeSectionLabel(),
+          Text('PRESETS', style: TextStyle(fontSize: 10)),
           SizedBox(height: 8),
           _ModeChips(),
         ],
@@ -71,10 +72,9 @@ class _SpeedSlider extends StatelessWidget {
                   Text(
                     ' / 255',
                     style: AppText.mono(
-                      fontSize: 10,
-                      color: AppColors.textMuted,
-                      letterSpacing: 0.1,
-                    ),
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                        letterSpacing: 0.1),
                   ),
                 ],
               ),
@@ -95,17 +95,17 @@ class _SpeedSlider extends StatelessWidget {
               value: speed.toDouble(),
               min: 0,
               max: 255,
-              onChanged: (v) =>
-                  context.read<CtrlNotifier>().setSpeed(v.round()),
+              onChanged: (v) => context.read<CtrlNotifier>().setSpeed(v.round()),
             ),
           ),
-          // Tick labels
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: ['0', '64', '128', '192', '255']
-                  .map((t) => Text(t, style: AppText.mono(fontSize: 8, color: AppColors.textMuted)))
+                  .map((t) => Text(t,
+                      style: AppText.mono(
+                          fontSize: 8, color: AppColors.textMuted)))
                   .toList(),
             ),
           ),
@@ -115,16 +115,17 @@ class _SpeedSlider extends StatelessWidget {
   }
 }
 
-// ─── D-Pad ───────────────────────────────────────────────────────────────────
+// ─── Direction Section (toggle + dpad or joystick) ───────────────────────────
 
-class _DPad extends StatefulWidget {
-  const _DPad();
+class _DirectionSection extends StatefulWidget {
+  const _DirectionSection();
 
   @override
-  State<_DPad> createState() => _DPadState();
+  State<_DirectionSection> createState() => _DirectionSectionState();
 }
 
-class _DPadState extends State<_DPad> {
+class _DirectionSectionState extends State<_DirectionSection> {
+  // Local dpad press tracking; joystick state lives in JoystickWidget.
   final Map<String, bool> _pressed = {};
 
   void _press(String dir) {
@@ -139,9 +140,7 @@ class _DPadState extends State<_DPad> {
 
   void _release(String dir) {
     setState(() => _pressed[dir] = false);
-    if (dir != 'stop') {
-      context.read<CtrlNotifier>().onDirectionRelease();
-    }
+    if (dir != 'stop') context.read<CtrlNotifier>().onDirectionRelease();
   }
 
   String get _stateLabel {
@@ -154,6 +153,9 @@ class _DPadState extends State<_DPad> {
 
   @override
   Widget build(BuildContext context) {
+    final notifier = context.watch<CtrlNotifier>();
+    final mode = notifier.driveCtrlMode;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       decoration: BoxDecoration(
@@ -163,96 +165,195 @@ class _DPadState extends State<_DPad> {
       ),
       child: Column(
         children: [
-          // Header row
+          // ── Header ────────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'DIRECTION · MANUAL',
-                style: AppText.label(letterSpacing: 0.22),
-              ),
-              Text(
-                _stateLabel,
-                style: AppText.mono(
-                  fontSize: 10,
-                  color: AppColors.accent,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Button grid
-          CustomPaint(
-            painter: _DPadHudPainter(),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
+              Text('DIRECTION · MANUAL',
+                  style: AppText.label(letterSpacing: 0.22)),
+              Row(
                 children: [
-                  // Row 1: _ UP _
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(width: 72),
-                      const SizedBox(width: 8),
-                      _DPadBtn(
-                        icon: Icons.keyboard_arrow_up_rounded,
-                        pressed: _pressed['up'] ?? false,
-                        onPress: () => _press('up'),
-                        onRelease: () => _release('up'),
-                      ),
-                      const SizedBox(width: 8),
-                      const SizedBox(width: 72),
-                    ],
+                  _ModeToggle(
+                    icon: Icons.apps_rounded,
+                    label: 'ARROWS',
+                    active: mode == 'dpad',
+                    onTap: () =>
+                        context.read<CtrlNotifier>().setDriveCtrlMode('dpad'),
                   ),
-                  const SizedBox(height: 8),
-                  // Row 2: LEFT  STOP  RIGHT
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _DPadBtn(
-                        icon: Icons.keyboard_arrow_left_rounded,
-                        pressed: _pressed['left'] ?? false,
-                        onPress: () => _press('left'),
-                        onRelease: () => _release('left'),
-                      ),
-                      const SizedBox(width: 8),
-                      _StopBtn(
-                        pressed: _pressed['stop'] ?? false,
-                        onPress: () => _press('stop'),
-                        onRelease: () => _release('stop'),
-                      ),
-                      const SizedBox(width: 8),
-                      _DPadBtn(
-                        icon: Icons.keyboard_arrow_right_rounded,
-                        pressed: _pressed['right'] ?? false,
-                        onPress: () => _press('right'),
-                        onRelease: () => _release('right'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Row 3: _ DOWN _
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(width: 72),
-                      const SizedBox(width: 8),
-                      _DPadBtn(
-                        icon: Icons.keyboard_arrow_down_rounded,
-                        pressed: _pressed['down'] ?? false,
-                        onPress: () => _press('down'),
-                        onRelease: () => _release('down'),
-                      ),
-                      const SizedBox(width: 8),
-                      const SizedBox(width: 72),
-                    ],
+                  const SizedBox(width: 6),
+                  _ModeToggle(
+                    icon: Icons.radio_button_checked,
+                    label: 'STICK',
+                    active: mode == 'joystick',
+                    onTap: () => context
+                        .read<CtrlNotifier>()
+                        .setDriveCtrlMode('joystick'),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+
+          // ── Status label (dpad only) ──────────────────────────────────
+          if (mode == 'dpad') ...[
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _stateLabel,
+                  style: AppText.mono(
+                      fontSize: 10,
+                      color: AppColors.accent,
+                      letterSpacing: 0.1),
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 10),
+
+          // ── Controller ────────────────────────────────────────────────
+          if (mode == 'dpad')
+            _DPad(pressed: _pressed, onPress: _press, onRelease: _release)
+          else
+            SizedBox(
+              height: 200,
+              child: JoystickWidget(
+                onMove: context.read<CtrlNotifier>().onJoystickMove,
+                onRelease: context.read<CtrlNotifier>().onJoystickRelease,
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _ModeToggle extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _ModeToggle({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? AppColors.accentSoft : AppColors.surface,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+              color: active ? AppColors.accent : AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 11,
+                color: active ? AppColors.accent : AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppText.mono(
+                fontSize: 9,
+                weight: FontWeight.w600,
+                color: active ? AppColors.accent : AppColors.textMuted,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── D-Pad ───────────────────────────────────────────────────────────────────
+
+class _DPad extends StatelessWidget {
+  final Map<String, bool> pressed;
+  final void Function(String) onPress;
+  final void Function(String) onRelease;
+
+  const _DPad({
+    required this.pressed,
+    required this.onPress,
+    required this.onRelease,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DPadHudPainter(),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 80),
+                _DPadBtn(
+                  icon: Icons.keyboard_arrow_up_rounded,
+                  pressed: pressed['up'] ?? false,
+                  onPress: () => onPress('up'),
+                  onRelease: () => onRelease('up'),
+                ),
+                const SizedBox(width: 80),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _DPadBtn(
+                  icon: Icons.keyboard_arrow_left_rounded,
+                  pressed: pressed['left'] ?? false,
+                  onPress: () => onPress('left'),
+                  onRelease: () => onRelease('left'),
+                ),
+                const SizedBox(width: 8),
+                _StopBtn(
+                  pressed: pressed['stop'] ?? false,
+                  onPress: () => onPress('stop'),
+                  onRelease: () => onRelease('stop'),
+                ),
+                const SizedBox(width: 8),
+                _DPadBtn(
+                  icon: Icons.keyboard_arrow_right_rounded,
+                  pressed: pressed['right'] ?? false,
+                  onPress: () => onPress('right'),
+                  onRelease: () => onRelease('right'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 80),
+                _DPadBtn(
+                  icon: Icons.keyboard_arrow_down_rounded,
+                  pressed: pressed['down'] ?? false,
+                  onPress: () => onPress('down'),
+                  onRelease: () => onRelease('down'),
+                ),
+                const SizedBox(width: 80),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -283,29 +384,25 @@ class _DPadBtn extends StatelessWidget {
         height: 72,
         decoration: BoxDecoration(
           color: pressed
-              ? AppColors.accent.withValues(alpha: 0.15)
+              ? AppColors.accent.withValues(alpha: 0.12)
               : AppColors.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: pressed ? AppColors.accent : AppColors.border,
-          ),
+              color: pressed ? AppColors.accent : AppColors.border),
           boxShadow: pressed
               ? [
                   BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                  ),
+                      color: AppColors.accent.withValues(alpha: 0.25),
+                      blurRadius: 12)
                 ]
               : null,
         ),
         child: AnimatedScale(
-          scale: pressed ? 0.94 : 1.0,
+          scale: pressed ? 0.93 : 1.0,
           duration: const Duration(milliseconds: 80),
-          child: Icon(
-            icon,
-            size: 32,
-            color: pressed ? AppColors.accent : AppColors.textPrimary,
-          ),
+          child: Icon(icon,
+              size: 32,
+              color: pressed ? AppColors.accent : AppColors.textPrimary),
         ),
       ),
     );
@@ -330,7 +427,7 @@ class _StopBtn extends StatelessWidget {
       onPointerUp: (_) => onRelease(),
       onPointerCancel: (_) => onRelease(),
       child: AnimatedScale(
-        scale: pressed ? 0.94 : 1.0,
+        scale: pressed ? 0.93 : 1.0,
         duration: const Duration(milliseconds: 80),
         child: ClipPath(
           clipper: _OctagonClipper(),
@@ -339,7 +436,7 @@ class _StopBtn extends StatelessWidget {
             width: 72,
             height: 72,
             color: pressed
-                ? AppColors.error.withValues(alpha: 0.15)
+                ? AppColors.error.withValues(alpha: 0.12)
                 : AppColors.surface,
             child: Center(
               child: Text(
@@ -381,39 +478,33 @@ class _DPadHudPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final paint = Paint()
+    final p = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
 
-    // Faint concentric circles
-    paint.color = AppColors.accent.withValues(alpha: 0.07);
-    canvas.drawCircle(Offset(cx, cy), size.height * 0.44, paint);
-    paint.color = AppColors.accent.withValues(alpha: 0.05);
-    canvas.drawCircle(Offset(cx, cy), size.height * 0.3, paint);
+    p.color = AppColors.accent.withValues(alpha: 0.06);
+    canvas.drawCircle(Offset(cx, cy), size.height * 0.44, p);
+    p.color = AppColors.accent.withValues(alpha: 0.04);
+    canvas.drawCircle(Offset(cx, cy), size.height * 0.30, p);
 
-    // Corner brackets
-    paint
-      ..color = AppColors.accent.withValues(alpha: 0.4)
+    p
+      ..color = AppColors.accent.withValues(alpha: 0.35)
       ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.square;
-    const bl = 10.0; // bracket length
+    const bl = 10.0;
     const pad = 8.0;
     final corners = [
-      // top-left
       [Offset(pad, pad + bl), Offset(pad, pad), Offset(pad + bl, pad)],
-      // top-right
       [
         Offset(size.width - pad - bl, pad),
         Offset(size.width - pad, pad),
         Offset(size.width - pad, pad + bl),
       ],
-      // bottom-left
       [
         Offset(pad, size.height - pad - bl),
         Offset(pad, size.height - pad),
         Offset(pad + bl, size.height - pad),
       ],
-      // bottom-right
       [
         Offset(size.width - pad - bl, size.height - pad),
         Offset(size.width - pad, size.height - pad),
@@ -421,11 +512,13 @@ class _DPadHudPainter extends CustomPainter {
       ],
     ];
     for (final pts in corners) {
-      final path = Path()
-        ..moveTo(pts[0].dx, pts[0].dy)
-        ..lineTo(pts[1].dx, pts[1].dy)
-        ..lineTo(pts[2].dx, pts[2].dy);
-      canvas.drawPath(path, paint);
+      canvas.drawPath(
+        Path()
+          ..moveTo(pts[0].dx, pts[0].dy)
+          ..lineTo(pts[1].dx, pts[1].dy)
+          ..lineTo(pts[2].dx, pts[2].dy),
+        p,
+      );
     }
   }
 
@@ -434,16 +527,6 @@ class _DPadHudPainter extends CustomPainter {
 }
 
 // ─── Mode Chips ───────────────────────────────────────────────────────────────
-
-class _ModeSectionLabel extends StatelessWidget {
-  const _ModeSectionLabel();
-
-  @override
-  Widget build(BuildContext context) => Text(
-        'PRESETS',
-        style: AppText.label(letterSpacing: 0.22),
-      );
-}
 
 class _ModeChips extends StatelessWidget {
   const _ModeChips();
@@ -459,24 +542,21 @@ class _ModeChips extends StatelessWidget {
             onTap: () => context.read<CtrlNotifier>().setMode(m),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              margin: EdgeInsets.only(
-                right: m == driveModes.last ? 0 : 6,
-              ),
+              margin:
+                  EdgeInsets.only(right: m == driveModes.last ? 0 : 6),
               padding: const EdgeInsets.symmetric(vertical: 9),
               decoration: BoxDecoration(
                 color: active
                     ? AppColors.accent.withValues(alpha: 0.1)
                     : AppColors.surface,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: active ? AppColors.accent : AppColors.border,
-                ),
+                border:
+                    Border.all(color: active ? AppColors.accent : AppColors.border),
                 boxShadow: active
                     ? [
                         BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                        ),
+                            color: AppColors.accent.withValues(alpha: 0.18),
+                            blurRadius: 10)
                       ]
                     : null,
               ),
