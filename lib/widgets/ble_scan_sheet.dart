@@ -148,6 +148,7 @@ class _BleScanSheetState extends State<BleScanSheet> {
                     itemBuilder: (_, i) {
                       final dev = results[i];
                       final bars = _rssiBars(dev.rssi);
+                      final isNamed = !dev.name.startsWith('BLE·');
                       return ListTile(
                         contentPadding:
                             const EdgeInsets.symmetric(horizontal: 4),
@@ -155,17 +156,24 @@ class _BleScanSheetState extends State<BleScanSheet> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: AppColors.accentSoft,
+                            color: isNamed
+                                ? AppColors.accentSoft
+                                : AppColors.surfaceDeep,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(Icons.bluetooth,
-                              color: AppColors.accent, size: 20),
+                              color: isNamed
+                                  ? AppColors.accent
+                                  : AppColors.textMuted,
+                              size: 20),
                         ),
                         title: Text(dev.name,
                             style: AppText.mono(
                                 fontSize: 12,
                                 weight: FontWeight.w600,
-                                color: AppColors.textPrimary)),
+                                color: isNamed
+                                    ? AppColors.textPrimary
+                                    : AppColors.textMuted)),
                         subtitle: Text(dev.deviceId,
                             style: AppText.mono(
                                 fontSize: 9, color: AppColors.textMuted)),

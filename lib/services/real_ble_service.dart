@@ -37,11 +37,26 @@ class RealBleService implements BleService {
       final results = await [
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
+        Permission.locationWhenInUse, // Required for BLE scan on Android < 12
       ].request();
-      return results.values.every((s) => s.isGranted || s.isLimited);
+      final btScan = results[Permission.bluetoothScan]?.isGranted ?? false;
+      final btConnect = results[Permission.bluetoothConnect]?.isGranted ?? false;
+      final location = results[Permission.locationWhenInUse]?.isGranted ?? false;
+      // Android 12+ needs BT perms; Android <12 needs location
+      return (btScan && btConnect) || location;
     }
     // iOS: CoreBluetooth prompts automatically on first use.
     return true;
+  }
+
+  /// Resolves a human-readable name: advertisement name > platform name > short hex ID.
+  String _resolveName(ScanResult r) {
+    final adv = r.device.advName.trim();
+    if (adv.isNotEmpty) return adv;
+    final platform = r.device.platformName.trim();
+    if (platform.isNotEmpty) return platform;
+    final hex = r.device.remoteId.str.replaceAll(':', '').replaceAll('-', '');
+    return 'BLE·${hex.substring((hex.length - 6).clamp(0, hex.length))}';
   }
 
   @override
@@ -59,11 +74,19 @@ class RealBleService implements BleService {
         _scannedDevices[id] = r.device;
         seen[id] = BleScanResult(
           deviceId: id,
-          name: r.device.platformName.isEmpty ? 'Unknown' : r.device.platformName,
+          name: _resolveName(r),
           rssi: r.rssi,
         );
       }
-      _scanController.add(seen.values.toList());
+      // Named devices first, then sort by signal strength within each group.
+      final sorted = seen.values.toList()
+        ..sort((a, b) {
+          final anamed = !a.name.startsWith('BLE·');
+          final bnamed = !b.name.startsWith('BLE·');
+          if (anamed != bnamed) return anamed ? -1 : 1;
+          return b.rssi.compareTo(a.rssi);
+        });
+      _scanController.add(sorted);
     });
 
     // Fire-and-forget: scan runs in background; stopScan() ends it early.
