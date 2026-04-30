@@ -133,10 +133,16 @@ class _ServoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double maxAngle = servo.id == 6 ? 180.0 : 180.0;
+    final double maxAngle = context.select<CtrlNotifier, double>(
+      (n) => n.settings.getServoMax(servo.id).toDouble(),
+    );
+    final double minAngle = context.select<CtrlNotifier, double>(
+      (n) => n.settings.getServoMin(servo.id).toDouble(),
+    );
+    
     final List<int> quickAngles = maxAngle == 180.0
-        ? [0, 45, 90, 135, 180]
-        : [0, 90, 180];
+        ? [minAngle.round(), 45, 90, 135, maxAngle.round()]
+        : [minAngle.round(), (maxAngle / 2).round(), maxAngle.round()];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -231,10 +237,14 @@ class _ServoCard extends StatelessWidget {
                         ),
                       ),
                       child: Slider(
-                        value: servo.value.toDouble().clamp(0.0, maxAngle),
-                        min: 0,
+                        value: servo.value.toDouble().clamp(minAngle, maxAngle),
+                        min: minAngle,
                         max: maxAngle,
                         onChanged: (v) => context.read<CtrlNotifier>().setServo(
+                          index,
+                          v.round(),
+                        ),
+                        onChangeEnd: (v) => context.read<CtrlNotifier>().endServo(
                           index,
                           v.round(),
                         ),
@@ -248,7 +258,7 @@ class _ServoCard extends StatelessWidget {
                         return Expanded(
                           child: GestureDetector(
                             onTap: () =>
-                                context.read<CtrlNotifier>().setServo(index, a),
+                                context.read<CtrlNotifier>().endServo(index, a),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 120),
                               margin: EdgeInsets.only(

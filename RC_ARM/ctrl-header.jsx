@@ -140,8 +140,11 @@ function TelemetryReadout({ label, value, accent }) {
 function TabBar({ active, onChange }) {
   const tabs = [
     { id: 'drive', label: 'DRIVE', icon: IconCar },
-    { id: 'arm', label: 'ARM', icon: IconArm }
+    { id: 'arm', label: 'ARM', icon: IconArm },
+    { id: 'settings', label: 'CONFIG', icon: IconGear }
   ];
+  const activeIdx = tabs.findIndex(t => t.id === active);
+
   return (
     <div style={{
       display: 'flex', position: 'relative',
@@ -152,17 +155,17 @@ function TabBar({ active, onChange }) {
         const isActive = active === tab.id;
         return (
           <button key={tab.id} onClick={() => onChange(tab.id)} style={{
-            flex: 1, padding: '14px 0',
+            flex: 1, padding: '12px 0',
             background: 'transparent', border: 'none',
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             fontFamily: 'Inter, sans-serif',
-            fontSize: 12, fontWeight: 600, letterSpacing: '0.18em',
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.15em',
             color: isActive ? '#E6EEEA' : '#6B7B74',
             position: 'relative',
             transition: 'color 0.2s'
           }}>
-            <tab.icon size={18} strokeWidth={1.5} stroke={isActive ? '#00E5A0' : '#6B7B74'}/>
+            <tab.icon size={16} strokeWidth={1.5} stroke={isActive ? '#00E5A0' : '#6B7B74'}/>
             <span>{tab.label}</span>
           </button>
         );
@@ -170,8 +173,8 @@ function TabBar({ active, onChange }) {
       {/* Sliding underline */}
       <div style={{
         position: 'absolute', bottom: -1, height: 2,
-        left: active === 'drive' ? '10%' : '60%',
-        width: '30%',
+        left: `calc(${activeIdx} * 33.33% + 4%)`,
+        width: '25%',
         background: '#00E5A0',
         boxShadow: '0 0 8px rgba(0,229,160,0.6)',
         transition: 'left 0.3s cubic-bezier(0.65, 0, 0.35, 1)'

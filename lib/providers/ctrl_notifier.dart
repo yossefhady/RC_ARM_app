@@ -198,7 +198,27 @@ class CtrlNotifier extends ChangeNotifier {
     _servos = next;
     _preset = null;
     notifyListeners();
+  }
+
+  void endServo(int idx, int value) {
+    setServo(idx, value);
     _send('${_servos[idx].id} $value\n');
+  }
+
+  Future<void> saveCurrentPosToPreset(String presetId, String newLabel) async {
+    final values = _servos.map((s) => s.value).toList();
+    final newPreset = ArmPreset(id: presetId, label: newLabel, values: values);
+    
+    final existing = List<ArmPreset>.from(settings.loadedPresets);
+    final idx = existing.indexWhere((p) => p.id == presetId);
+    if (idx != -1) {
+      existing[idx] = newPreset;
+    } else {
+      existing.add(newPreset);
+    }
+    await settings.savePresets(existing);
+    _preset = presetId;
+    notifyListeners();
   }
 
   void applyPreset(ArmPreset p) {

@@ -115,6 +115,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             );
           }).toList(),
+          const SizedBox(height: 32),
+          _SectionHeader('SERVO LIMITS (0-180)'),
+          ...[1, 2, 4, 5, 6].map((sId) {
+            return Column(
+              children: [
+                _SettingRow(
+                  label: 'S$sId Max Angle',
+                  value: settings.getServoMax(sId).toString(),
+                  onChanged: (v) {
+                    final val = int.tryParse(v);
+                    if (val != null) {
+                      settings.setServoMax(sId, val.clamp(0, 180));
+                      setState((){});
+                    }
+                  },
+                ),
+                _SettingRow(
+                  label: 'S$sId Min Angle',
+                  value: settings.getServoMin(sId).toString(),
+                  onChanged: (v) {
+                    final val = int.tryParse(v);
+                    if (val != null) {
+                      settings.setServoMin(sId, val.clamp(0, 180));
+                      setState((){});
+                    }
+                  },
+                ),
+                const Divider(),
+              ],
+            );
+          }).toList(),
         ],
       ),
     );
