@@ -12,6 +12,16 @@ workflows:
       - name: Install dependencies
         script: flutter pub get
 
+      - name: Disable code signing in Xcode project
+        script: |
+          cat >> ios/Flutter/Release.xcconfig << 'EOF'
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=
+          CODE_SIGN_STYLE=Manual
+          DEVELOPMENT_TEAM=
+          EOF
+
       - name: Build iOS (No Codesign)
         script: flutter build ios --release --no-codesign
 
