@@ -6,6 +6,7 @@ import '../../providers/ctrl_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../ble_scan_sheet.dart';
+import '../../screens/settings/settings_screen.dart';
 
 class CtrlHeader extends StatefulWidget {
   const CtrlHeader({super.key});
@@ -29,8 +30,7 @@ class _CtrlHeaderState extends State<CtrlHeader>
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
-    _timer =
-        Timer.periodic(const Duration(milliseconds: 800), (_) {
+    _timer = Timer.periodic(const Duration(milliseconds: 800), (_) {
       if (mounted) setState(() => _tick++);
     });
   }
@@ -61,8 +61,12 @@ class _CtrlHeaderState extends State<CtrlHeader>
         MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(16, top + (isLandscape ? 6 : 12), 16,
-          isLandscape ? 6 : 10),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        top + (isLandscape ? 6 : 12),
+        16,
+        isLandscape ? 6 : 10,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.border)),
@@ -123,6 +127,22 @@ class _CtrlHeaderState extends State<CtrlHeader>
                   }
                 },
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(
+                  Icons.settings,
+                  size: 20,
+                  color: AppColors.textMuted,
+                ),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
             ],
           ),
 
@@ -134,7 +154,8 @@ class _CtrlHeaderState extends State<CtrlHeader>
               child: Row(
                 children: [
                   Expanded(
-                      child: _SignalBars(bars: bars, connected: connected)),
+                    child: _SignalBars(bars: bars, connected: connected),
+                  ),
                   const SizedBox(width: 12),
                   _Telemetry(
                     label: 'LAT',
@@ -157,7 +178,9 @@ class _CtrlHeaderState extends State<CtrlHeader>
                             ? Icons.battery_5_bar
                             : Icons.battery_alert,
                         size: 14,
-                        color: _battery > 20 ? AppColors.accent : AppColors.error,
+                        color: _battery > 20
+                            ? AppColors.accent
+                            : AppColors.error,
                       ),
                       const SizedBox(width: 3),
                       Text(
@@ -237,7 +260,12 @@ class _StatusDot extends StatelessWidget {
               shape: BoxShape.circle,
               color: color,
               boxShadow: connected
-                  ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 6)]
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.6),
+                        blurRadius: 6,
+                      ),
+                    ]
                   : null,
             ),
           ),
@@ -266,7 +294,8 @@ class _BlePill extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-              color: connected ? AppColors.accent : AppColors.border),
+            color: connected ? AppColors.accent : AppColors.border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -327,8 +356,11 @@ class _Telemetry extends StatelessWidget {
   final String value;
   final bool accent;
 
-  const _Telemetry(
-      {required this.label, required this.value, required this.accent});
+  const _Telemetry({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {

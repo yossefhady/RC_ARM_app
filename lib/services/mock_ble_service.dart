@@ -17,10 +17,14 @@ class MockBleService implements BleService {
   bool _connected = false;
   final List<BleScanResult> _discovered = [];
 
-  @override Stream<bool> get connectionStream => _connController.stream;
-  @override Stream<String> get responseStream => _respController.stream;
-  @override Stream<List<BleScanResult>> get scanStream => _scanController.stream;
-  @override bool get isConnected => _connected;
+  @override
+  Stream<bool> get connectionStream => _connController.stream;
+  @override
+  Stream<String> get responseStream => _respController.stream;
+  @override
+  Stream<List<BleScanResult>> get scanStream => _scanController.stream;
+  @override
+  bool get isConnected => _connected;
 
   @override
   Future<void> startScan() async {
@@ -31,7 +35,9 @@ class MockBleService implements BleService {
 
   void _emitDevicesAsync() async {
     for (final dev in _fakeDevices) {
-      await Future<void>.delayed(Duration(milliseconds: 500 + _rng.nextInt(700)));
+      await Future<void>.delayed(
+        Duration(milliseconds: 500 + _rng.nextInt(700)),
+      );
       if (_scanController.isClosed) return;
       _discovered.add(dev);
       _scanController.add(List.unmodifiable(_discovered));

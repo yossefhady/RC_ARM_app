@@ -9,12 +9,11 @@ const DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 const SERVO_NAMES = [
-  { id: 1, name: 'BASE ROT' },
-  { id: 2, name: 'SHOULDER' },
-  { id: 3, name: 'ELBOW' },
-  { id: 4, name: 'WRIST PITCH' },
-  { id: 5, name: 'WRIST ROT' },
-  { id: 6, name: 'GRIPPER' }
+  { id: 1, name: 'BASE ROT', max: 180 },
+  { id: 2, name: 'SHOULDER', max: 180 },
+  { id: 4, name: 'ELBOW', max: 180 },
+  { id: 5, name: 'WRIST ROLL', max: 180 },
+  { id: 6, name: 'GRIPPER', max: 180 }
 ];
 
 function ts() {
@@ -28,7 +27,7 @@ function App() {
   const [connected, setConnected] = useState(true);
   const [speed, setSpeed] = useState(180);
   const [mode, setMode] = useState('forward');
-  const [servos, setServos] = useState(SERVO_NAMES.map(s => ({ ...s, value: 90 })));
+  const [servos, setServos] = useState(SERVO_NAMES.map(s => ({ ...s, value: s.id === 6 ? 90 : 90 })));
   const [preset, setPreset] = useState('home');
   const [logs, setLogs] = useState([
     { ts: ts(), type: 'info', msg: 'BLE link established · ESP32-WROOM-32' },
@@ -79,7 +78,7 @@ function App() {
       return next;
     });
     setPreset(null);
-    addLog('out', `S${idx+1} → ${String(v).padStart(3,'0')}°`);
+    addLog('out', `S${servos[idx].id} → ${String(v).padStart(3,'0')}°`);
   };
 
   const onPreset = (p) => {

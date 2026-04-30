@@ -11,6 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+tg_ble_test/
 
 # IntelliJ related
 *.iml

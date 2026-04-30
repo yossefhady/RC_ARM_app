@@ -20,8 +20,10 @@ function PresetButton({ icon: Icon, label, active, onClick }) {
   );
 }
 
-function ServoSlider({ value, onChange }) {
-  const pct = (value / 180) * 100;
+function ServoSlider({ value, onChange, max = 180 }) {
+  const pct = (value / max) * 100;
+  const tickMarks = max === 180 ? [0, 45, 90, 135, 180] : [0, 90, 180];
+  
   return (
     <div style={{ position: 'relative', height: 26, marginTop: 4 }}>
       <div style={{
@@ -33,17 +35,17 @@ function ServoSlider({ value, onChange }) {
         background: '#00E5A0', borderRadius: 3,
         boxShadow: '0 0 6px rgba(0,229,160,0.4)'
       }}/>
-      {/* Tick marks at 0, 45, 90, 135, 180 */}
-      {[0, 45, 90, 135, 180].map(t => (
+      {/* Tick marks */}
+      {tickMarks.map(t => (
         <div key={t} style={{
           position: 'absolute',
-          top: 17, left: `${(t/180)*100}%`,
+          top: 17, left: `${(t/max)*100}%`,
           width: 1, height: 5,
           background: '#6B7B74',
           transform: 'translateX(-0.5px)'
         }}/>
       ))}
-      <input type="range" min={0} max={180} value={value}
+      <input type="range" min={0} max={max} value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -62,7 +64,8 @@ function ServoSlider({ value, onChange }) {
 }
 
 function ServoCard({ servo, value, onChange }) {
-  const quickAngles = [0, 45, 90, 135, 180];
+  const max = servo.max || 180;
+  const quickAngles = max === 180 ? [0, 45, 90, 135, 180] : [0, 90, 180];
   return (
     <div style={{
       background: '#141716',
@@ -96,7 +99,7 @@ function ServoCard({ servo, value, onChange }) {
       </div>
 
       <div style={{ margin: '8px 0 10px' }}>
-        <ServoSlider value={value} onChange={onChange}/>
+        <ServoSlider value={value} onChange={onChange} max={max}/>
       </div>
 
       {/* Quick angle chips */}
@@ -147,10 +150,10 @@ function AnimatedAngle({ value, style }) {
 
 function ArmTab({ servos, onServo, preset, onPreset }) {
   const presets = [
-    { id: 'home', label: 'HOME', icon: IconHome, values: [90, 90, 90, 90, 90, 90] },
-    { id: 'grab', label: 'GRAB', icon: IconGrab, values: [90, 120, 45, 90, 60, 20] },
-    { id: 'lift', label: 'LIFT', icon: IconLift, values: [90, 45, 135, 90, 90, 90] },
-    { id: 'rest', label: 'REST', icon: IconRest, values: [0, 0, 180, 0, 0, 180] }
+    { id: 'home', label: 'HOME', icon: IconHome, values: [90, 90, 90, 90, 90] },
+    { id: 'grab', label: 'GRAB', icon: IconGrab, values: [90, 120, 90, 60, 40] },
+    { id: 'lift', label: 'LIFT', icon: IconLift, values: [90, 45, 90, 90, 90] },
+    { id: 'rest', label: 'REST', icon: IconRest, values: [0, 0, 0, 0, 180] }
   ];
 
   return (

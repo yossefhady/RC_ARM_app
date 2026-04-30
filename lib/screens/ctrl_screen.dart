@@ -89,11 +89,7 @@ class _LandscapeLayout extends StatelessWidget {
                 // Terminal pane (right, expanded)
                 Expanded(
                   flex: 4,
-                  child: Column(
-                    children: const [
-                      TerminalWidget(expand: true),
-                    ],
-                  ),
+                  child: Column(children: const [TerminalWidget(expand: true)]),
                 ),
               ],
             ),

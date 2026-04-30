@@ -29,18 +29,20 @@ class _AnimatedNumberState extends State<AnimatedNumber>
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
-    _anim = IntTween(begin: widget.value, end: widget.value).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _anim = IntTween(
+      begin: widget.value,
+      end: widget.value,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
   void didUpdateWidget(AnimatedNumber old) {
     super.didUpdateWidget(old);
     if (old.value != widget.value) {
-      _anim = IntTween(begin: _anim.value, end: widget.value).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-      );
+      _anim = IntTween(
+        begin: _anim.value,
+        end: widget.value,
+      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
       _ctrl.forward(from: 0);
     }
   }

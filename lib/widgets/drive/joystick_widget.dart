@@ -106,14 +106,22 @@ class _JoystickPainter extends CustomPainter {
     final hairPaint = Paint()
       ..color = AppColors.textMuted.withValues(alpha: 0.25)
       ..strokeWidth = 0.6;
-    canvas.drawLine(Offset(c.dx - baseR, c.dy), Offset(c.dx + baseR, c.dy), hairPaint);
-    canvas.drawLine(Offset(c.dx, c.dy - baseR), Offset(c.dx, c.dy + baseR), hairPaint);
+    canvas.drawLine(
+      Offset(c.dx - baseR, c.dy),
+      Offset(c.dx + baseR, c.dy),
+      hairPaint,
+    );
+    canvas.drawLine(
+      Offset(c.dx, c.dy - baseR),
+      Offset(c.dx, c.dy + baseR),
+      hairPaint,
+    );
 
     // ── Direction arrows ─────────────────────────────────────────────────────
     _arrow(canvas, c + Offset(0, -(baseR - 12)), 0);
-    _arrow(canvas, c + Offset(0,  (baseR - 12)), pi);
+    _arrow(canvas, c + Offset(0, (baseR - 12)), pi);
     _arrow(canvas, c + Offset(-(baseR - 12), 0), -pi / 2);
-    _arrow(canvas, c + Offset( (baseR - 12), 0),  pi / 2);
+    _arrow(canvas, c + Offset((baseR - 12), 0), pi / 2);
 
     // ── Knob shadow ──────────────────────────────────────────────────────────
     final kc = c + knob;

@@ -72,9 +72,10 @@ class _SpeedSlider extends StatelessWidget {
                   Text(
                     ' / 255',
                     style: AppText.mono(
-                        fontSize: 10,
-                        color: AppColors.textMuted,
-                        letterSpacing: 0.1),
+                      fontSize: 10,
+                      color: AppColors.textMuted,
+                      letterSpacing: 0.1,
+                    ),
                   ),
                 ],
               ),
@@ -95,7 +96,8 @@ class _SpeedSlider extends StatelessWidget {
               value: speed.toDouble(),
               min: 0,
               max: 255,
-              onChanged: (v) => context.read<CtrlNotifier>().setSpeed(v.round()),
+              onChanged: (v) =>
+                  context.read<CtrlNotifier>().setSpeed(v.round()),
             ),
           ),
           Padding(
@@ -103,9 +105,15 @@ class _SpeedSlider extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: ['0', '64', '128', '192', '255']
-                  .map((t) => Text(t,
+                  .map(
+                    (t) => Text(
+                      t,
                       style: AppText.mono(
-                          fontSize: 8, color: AppColors.textMuted)))
+                        fontSize: 8,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -169,8 +177,10 @@ class _DirectionSectionState extends State<_DirectionSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('DIRECTION · MANUAL',
-                  style: AppText.label(letterSpacing: 0.22)),
+              Text(
+                'DIRECTION · MANUAL',
+                style: AppText.label(letterSpacing: 0.22),
+              ),
               Row(
                 children: [
                   _ModeToggle(
@@ -185,9 +195,9 @@ class _DirectionSectionState extends State<_DirectionSection> {
                     icon: Icons.radio_button_checked,
                     label: 'STICK',
                     active: mode == 'joystick',
-                    onTap: () => context
-                        .read<CtrlNotifier>()
-                        .setDriveCtrlMode('joystick'),
+                    onTap: () => context.read<CtrlNotifier>().setDriveCtrlMode(
+                      'joystick',
+                    ),
                   ),
                 ],
               ),
@@ -203,9 +213,10 @@ class _DirectionSectionState extends State<_DirectionSection> {
                 child: Text(
                   _stateLabel,
                   style: AppText.mono(
-                      fontSize: 10,
-                      color: AppColors.accent,
-                      letterSpacing: 0.1),
+                    fontSize: 10,
+                    color: AppColors.accent,
+                    letterSpacing: 0.1,
+                  ),
                 ),
               ),
             ),
@@ -254,14 +265,17 @@ class _ModeToggle extends StatelessWidget {
           color: active ? AppColors.accentSoft : AppColors.surface,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-              color: active ? AppColors.accent : AppColors.border),
+            color: active ? AppColors.accent : AppColors.border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 11,
-                color: active ? AppColors.accent : AppColors.textMuted),
+            Icon(
+              icon,
+              size: 11,
+              color: active ? AppColors.accent : AppColors.textMuted,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -388,21 +402,25 @@ class _DPadBtn extends StatelessWidget {
               : AppColors.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-              color: pressed ? AppColors.accent : AppColors.border),
+            color: pressed ? AppColors.accent : AppColors.border,
+          ),
           boxShadow: pressed
               ? [
                   BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.25),
-                      blurRadius: 12)
+                    color: AppColors.accent.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                  ),
                 ]
               : null,
         ),
         child: AnimatedScale(
           scale: pressed ? 0.93 : 1.0,
           duration: const Duration(milliseconds: 80),
-          child: Icon(icon,
-              size: 32,
-              color: pressed ? AppColors.accent : AppColors.textPrimary),
+          child: Icon(
+            icon,
+            size: 32,
+            color: pressed ? AppColors.accent : AppColors.textPrimary,
+          ),
         ),
       ),
     );
@@ -542,21 +560,22 @@ class _ModeChips extends StatelessWidget {
             onTap: () => context.read<CtrlNotifier>().setMode(m),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              margin:
-                  EdgeInsets.only(right: m == driveModes.last ? 0 : 6),
+              margin: EdgeInsets.only(right: m == driveModes.last ? 0 : 6),
               padding: const EdgeInsets.symmetric(vertical: 9),
               decoration: BoxDecoration(
                 color: active
                     ? AppColors.accent.withValues(alpha: 0.1)
                     : AppColors.surface,
                 borderRadius: BorderRadius.circular(6),
-                border:
-                    Border.all(color: active ? AppColors.accent : AppColors.border),
+                border: Border.all(
+                  color: active ? AppColors.accent : AppColors.border,
+                ),
                 boxShadow: active
                     ? [
                         BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.18),
-                            blurRadius: 10)
+                          color: AppColors.accent.withValues(alpha: 0.18),
+                          blurRadius: 10,
+                        ),
                       ]
                     : null,
               ),

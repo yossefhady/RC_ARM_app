@@ -77,10 +77,7 @@ class _TerminalWidgetState extends State<TerminalWidget>
             blinkCtrl: _blinkCtrl,
             expand: widget.expand,
           ),
-          _InputRow(
-            ctrl: _inputCtrl,
-            onSubmit: _submit,
-          ),
+          _InputRow(ctrl: _inputCtrl, onSubmit: _submit),
         ],
       ),
     );
@@ -147,10 +144,10 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 6,
-        height: 6,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      );
+    width: 6,
+    height: 6,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
 }
 
 // ─── Log Body ─────────────────────────────────────────────────────────────────
@@ -169,18 +166,18 @@ class _LogBody extends StatelessWidget {
   });
 
   static Color _color(LogType t) => switch (t) {
-        LogType.out => AppColors.accent,
-        LogType.inbound => AppColors.info,
-        LogType.info => AppColors.textMuted,
-        LogType.err => AppColors.error,
-      };
+    LogType.out => AppColors.accent,
+    LogType.inbound => AppColors.info,
+    LogType.info => AppColors.textMuted,
+    LogType.err => AppColors.error,
+  };
 
   static String _prefix(LogType t) => switch (t) {
-        LogType.out => '→',
-        LogType.inbound => '←',
-        LogType.info => '·',
-        LogType.err => '!',
-      };
+    LogType.out => '→',
+    LogType.inbound => '←',
+    LogType.info => '·',
+    LogType.err => '!',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +287,10 @@ class _InputRow extends StatelessWidget {
             builder: (_, __) => GestureDetector(
               onTap: onSubmit,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: const BoxDecoration(
                   border: Border(left: BorderSide(color: AppColors.border)),
                 ),

@@ -38,8 +38,8 @@ class ArmTab extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...notifier.servos.asMap().entries.map(
-                (e) => _ServoCard(servo: e.value, index: e.key),
-              ),
+            (e) => _ServoCard(servo: e.value, index: e.key),
+          ),
         ],
       ),
     );
@@ -54,6 +54,8 @@ class _PresetGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notifier = context.watch<CtrlNotifier>();
+    final presets = notifier.settings.loadedPresets;
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -61,7 +63,7 @@ class _PresetGrid extends StatelessWidget {
       crossAxisSpacing: 6,
       mainAxisSpacing: 6,
       childAspectRatio: 2.8,
-      children: armPresets.map((p) {
+      children: presets.map((p) {
         final active = preset == p.id;
         return GestureDetector(
           onTap: () => context.read<CtrlNotifier>().applyPreset(p),
@@ -96,7 +98,9 @@ class _PresetGrid extends StatelessWidget {
                   style: AppText.label(
                     fontSize: 10,
                     weight: FontWeight.w700,
-                    color: active ? AppColors.background : AppColors.textPrimary,
+                    color: active
+                        ? AppColors.background
+                        : AppColors.textPrimary,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -127,10 +131,13 @@ class _ServoCard extends StatelessWidget {
 
   const _ServoCard({required this.servo, required this.index});
 
-  static const _quickAngles = [0, 45, 90, 135, 180];
-
   @override
   Widget build(BuildContext context) {
+    final double maxAngle = servo.id == 6 ? 180.0 : 180.0;
+    final List<int> quickAngles = maxAngle == 180.0
+        ? [0, 45, 90, 135, 180]
+        : [0, 90, 180];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -219,21 +226,24 @@ class _ServoCard extends StatelessWidget {
                         thumbColor: AppColors.background,
                         overlayColor: AppColors.accent.withValues(alpha: 0.15),
                         thumbShape: _ServoThumbShape(),
-                        overlayShape:
-                            const RoundSliderOverlayShape(overlayRadius: 14),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 14,
+                        ),
                       ),
                       child: Slider(
-                        value: servo.value.toDouble(),
+                        value: servo.value.toDouble().clamp(0.0, maxAngle),
                         min: 0,
-                        max: 180,
-                        onChanged: (v) =>
-                            context.read<CtrlNotifier>().setServo(index, v.round()),
+                        max: maxAngle,
+                        onChanged: (v) => context.read<CtrlNotifier>().setServo(
+                          index,
+                          v.round(),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
                     // Quick-angle chips
                     Row(
-                      children: _quickAngles.map((a) {
+                      children: quickAngles.map((a) {
                         final active = servo.value == a;
                         return Expanded(
                           child: GestureDetector(
@@ -242,7 +252,7 @@ class _ServoCard extends StatelessWidget {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 120),
                               margin: EdgeInsets.only(
-                                right: a == _quickAngles.last ? 0 : 4,
+                                right: a == quickAngles.last ? 0 : 4,
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 5),
                               decoration: BoxDecoration(
@@ -285,8 +295,7 @@ class _ServoCard extends StatelessWidget {
 
 class _ServoThumbShape extends SliderComponentShape {
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
-      const Size(12, 12);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(12, 12);
 
   @override
   void paint(

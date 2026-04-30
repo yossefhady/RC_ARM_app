@@ -83,11 +83,16 @@ class _BleScanSheetState extends State<BleScanSheet> {
               // Header row
               Row(
                 children: [
-                  Icon(Icons.bluetooth_searching,
-                      size: 16, color: AppColors.accent),
+                  Icon(
+                    Icons.bluetooth_searching,
+                    size: 16,
+                    color: AppColors.accent,
+                  ),
                   const SizedBox(width: 8),
-                  Text('SELECT DEVICE',
-                      style: AppText.label(letterSpacing: 0.22)),
+                  Text(
+                    'SELECT DEVICE',
+                    style: AppText.label(letterSpacing: 0.22),
+                  ),
                   const Spacer(),
                   if (scanning) ...[
                     SizedBox(
@@ -99,15 +104,23 @@ class _BleScanSheetState extends State<BleScanSheet> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text('SCANNING…',
-                        style: AppText.mono(
-                            fontSize: 10, color: AppColors.accent)),
+                    Text(
+                      'SCANNING…',
+                      style: AppText.mono(
+                        fontSize: 10,
+                        color: AppColors.accent,
+                      ),
+                    ),
                   ] else
                     GestureDetector(
                       onTap: () => notifier.startScan(),
-                      child: Text('RESCAN',
-                          style: AppText.mono(
-                              fontSize: 10, color: AppColors.accent)),
+                      child: Text(
+                        'RESCAN',
+                        style: AppText.mono(
+                          fontSize: 10,
+                          color: AppColors.accent,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -122,16 +135,20 @@ class _BleScanSheetState extends State<BleScanSheet> {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.bluetooth_disabled,
-                            size: 32,
-                            color: AppColors.textMuted.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.bluetooth_disabled,
+                          size: 32,
+                          color: AppColors.textMuted.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           scanning
                               ? 'Searching for nearby BLE devices…'
                               : 'No devices found. Tap RESCAN.',
                           style: AppText.mono(
-                              fontSize: 11, color: AppColors.textMuted),
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -150,8 +167,9 @@ class _BleScanSheetState extends State<BleScanSheet> {
                       final bars = _rssiBars(dev.rssi);
                       final isNamed = !dev.name.startsWith('BLE·');
                       return ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 4),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                        ),
                         leading: Container(
                           width: 36,
                           height: 36,
@@ -161,22 +179,31 @@ class _BleScanSheetState extends State<BleScanSheet> {
                                 : AppColors.surfaceDeep,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.bluetooth,
-                              color: isNamed
-                                  ? AppColors.accent
-                                  : AppColors.textMuted,
-                              size: 20),
+                          child: Icon(
+                            Icons.bluetooth,
+                            color: isNamed
+                                ? AppColors.accent
+                                : AppColors.textMuted,
+                            size: 20,
+                          ),
                         ),
-                        title: Text(dev.name,
-                            style: AppText.mono(
-                                fontSize: 12,
-                                weight: FontWeight.w600,
-                                color: isNamed
-                                    ? AppColors.textPrimary
-                                    : AppColors.textMuted)),
-                        subtitle: Text(dev.deviceId,
-                            style: AppText.mono(
-                                fontSize: 9, color: AppColors.textMuted)),
+                        title: Text(
+                          dev.name,
+                          style: AppText.mono(
+                            fontSize: 12,
+                            weight: FontWeight.w600,
+                            color: isNamed
+                                ? AppColors.textPrimary
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                        subtitle: Text(
+                          dev.deviceId,
+                          style: AppText.mono(
+                            fontSize: 9,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -199,9 +226,13 @@ class _BleScanSheetState extends State<BleScanSheet> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text('${dev.rssi} dBm',
-                                style: AppText.mono(
-                                    fontSize: 8, color: AppColors.textMuted)),
+                            Text(
+                              '${dev.rssi} dBm',
+                              style: AppText.mono(
+                                fontSize: 8,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
                           ],
                         ),
                         onTap: () {

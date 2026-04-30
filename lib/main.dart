@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/ctrl_notifier.dart';
 import 'screens/ctrl_screen.dart';
 import 'services/real_ble_service.dart';
+import 'services/settings_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final settings = SettingsService(prefs);
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
@@ -19,16 +24,17 @@ void main() {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const CtrlApp());
+  runApp(CtrlApp(settings: settings));
 }
 
 class CtrlApp extends StatelessWidget {
-  const CtrlApp({super.key});
+  final SettingsService settings;
+  const CtrlApp({super.key, required this.settings});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CtrlNotifier(RealBleService()),
+      create: (_) => CtrlNotifier(RealBleService(), settings),
       child: MaterialApp(
         title: 'CTRL',
         debugShowCheckedModeBanner: false,

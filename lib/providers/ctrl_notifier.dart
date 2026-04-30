@@ -7,22 +7,23 @@ import '../models/drive_mode.dart';
 import '../models/log_entry.dart';
 import '../models/servo_model.dart';
 import '../services/ble_service.dart';
+import '../services/settings_service.dart';
 
 const _servoDefs = [
   (id: 1, name: 'BASE ROT'),
   (id: 2, name: 'SHOULDER'),
-  (id: 3, name: 'ELBOW'),
-  (id: 4, name: 'WRIST PITCH'),
-  (id: 5, name: 'WRIST ROT'),
+  (id: 4, name: 'ELBOW'),
+  (id: 5, name: 'WRIST ROLL'),
   (id: 6, name: 'GRIPPER'),
 ];
 
 class CtrlNotifier extends ChangeNotifier {
-  CtrlNotifier(this._ble) {
+  final BleService _ble;
+  final SettingsService settings;
+
+  CtrlNotifier(this._ble, this.settings) {
     _init();
   }
-
-  final BleService _ble;
 
   // ── Connection ──────────────────────────────────────────────────────────────
   bool _connected = false;
@@ -39,7 +40,9 @@ class CtrlNotifier extends ChangeNotifier {
   String _mode = 'forward';
   String? _preset = 'home';
   List<ServoModel> _servos = _servoDefs
-      .map((s) => ServoModel(id: s.id, name: s.name, value: 90))
+      .map(
+        (s) => ServoModel(id: s.id, name: s.name, value: s.id == 6 ? 75 : 90),
+      )
       .toList();
   List<LogEntry> _logs = [];
 
@@ -65,16 +68,16 @@ class CtrlNotifier extends ChangeNotifier {
   void _init() {
     _connSub = _ble.connectionStream.listen((c) {
       _connected = c;
-      if (!c) _addLog(LogType.info, 'BLE link lost');
+      if (!c) _addLog(LogType.info, 'Bluetooth link lost');
       notifyListeners();
     });
     _respSub = _ble.responseStream.listen((msg) {
       _addLog(LogType.inbound, msg);
     });
-    _addLog(LogType.info, 'CTRL ready · tap BLE button to scan');
+    _addLog(LogType.info, 'CTRL ready · tap scan button');
   }
 
-  // ── BLE Scan ─────────────────────────────────────────────────────────────────
+  // ── BLE Scan (Now Classic BT) ───────────────────────────────────────────────
 
   Future<void> startScan() async {
     if (_isScanning) return;
@@ -90,7 +93,7 @@ class CtrlNotifier extends ChangeNotifier {
 
     try {
       await _ble.startScan();
-      _addLog(LogType.info, 'Scanning for BLE devices…');
+      _addLog(LogType.info, 'Scanning for Bluetooth devices…');
     } catch (e) {
       _addLog(LogType.err, 'Scan error: $e');
       _isScanning = false;
@@ -116,16 +119,14 @@ class CtrlNotifier extends ChangeNotifier {
     _addLog(LogType.info, 'Connecting to ${device.name}…');
     try {
       await _ble.connectTo(device);
-      _addLog(LogType.info, 'BLE link up · ${device.name}');
-      _send('SET_PWM $_speed');
-      _send('ARM_HOME');
+      _addLog(LogType.info, 'BT link up · ${device.name}');
     } catch (e) {
       _addLog(LogType.err, 'Connection failed: $e');
     }
   }
 
   void disconnectDevice() {
-    _addLog(LogType.info, 'BLE disconnecting…');
+    _addLog(LogType.info, 'Disconnecting…');
     _ble.disconnect();
   }
 
@@ -142,57 +143,51 @@ class CtrlNotifier extends ChangeNotifier {
   }
 
   void onDirectionPress(String dir) {
-    const cmdMap = {
-      'up': 'DRIVE_FWD',
-      'down': 'DRIVE_REV',
-      'left': 'TURN_L',
-      'right': 'TURN_R',
+    final cmdMap = {
+      'up': settings.cmdUp,
+      'down': settings.cmdDown,
+      'left': settings.cmdLeft,
+      'right': settings.cmdRight,
     };
-    _send('${cmdMap[dir]!} pwm=$_speed');
+    _send(cmdMap[dir]!);
   }
 
-  void onDirectionRelease() => _send('DRIVE_STOP');
+  void onDirectionRelease() => _send(settings.cmdStop);
 
-  void onStop() => _send('DRIVE_STOP');
+  void onStop() => _send(settings.cmdStop);
 
   void onJoystickMove(double x, double y) {
     final mag = sqrt(x * x + y * y).clamp(0.0, 1.0);
     final cmd = _joystickCmd(x, y, mag);
     if (cmd == _lastJoyCmd) return;
     _lastJoyCmd = cmd;
-    _addLog(LogType.out, cmd);
-    _ble.sendCommand(cmd);
+    _send(cmd);
   }
 
   void onJoystickRelease() {
-    if (_lastJoyCmd == null || _lastJoyCmd == 'DRIVE_STOP') return;
+    if (_lastJoyCmd == null || _lastJoyCmd == settings.cmdStop) return;
     _lastJoyCmd = null;
-    _send('DRIVE_STOP');
+    _send(settings.cmdStop);
   }
 
   String _joystickCmd(double x, double y, double mag) {
-    if (mag < 0.15) return 'DRIVE_STOP';
-    // Quantise pwm to 16-unit steps to reduce command spam.
-    final pwm = ((mag * _speed / 16).round() * 16).clamp(0, 255);
+    if (mag < 0.15) return settings.cmdStop;
     if (y.abs() >= x.abs()) {
-      return y > 0 ? 'DRIVE_FWD pwm=$pwm' : 'DRIVE_REV pwm=$pwm';
+      return y > 0 ? settings.cmdUp : settings.cmdDown;
     }
-    return x > 0 ? 'TURN_R pwm=$pwm' : 'TURN_L pwm=$pwm';
+    return x > 0 ? settings.cmdRight : settings.cmdLeft;
   }
 
   void setSpeed(int v) {
     _speed = v;
     notifyListeners();
-    _speedDebounce?.cancel();
-    _speedDebounce =
-        Timer(const Duration(milliseconds: 300), () => _send('SET_PWM $_speed'));
+    // For this simple classic bluetooth test we won't spam the pwm command right now.
   }
 
   void setMode(DriveMode m) {
     _mode = m.id;
     _speed = m.speed;
     notifyListeners();
-    _send('MODE ${m.id.toUpperCase()} · pwm=${m.speed}');
   }
 
   // ── Arm ──────────────────────────────────────────────────────────────────────
@@ -203,7 +198,7 @@ class CtrlNotifier extends ChangeNotifier {
     _servos = next;
     _preset = null;
     notifyListeners();
-    _send('S${idx + 1} → ${value.toString().padLeft(3, '0')}°');
+    _send('${_servos[idx].id} $value\n');
   }
 
   void applyPreset(ArmPreset p) {
@@ -211,15 +206,26 @@ class CtrlNotifier extends ChangeNotifier {
     _servos = [
       for (var i = 0; i < _servos.length; i++)
         _servos[i].copyWith(
-            value: i < p.values.length ? p.values[i] : _servos[i].value),
+          value: i < p.values.length ? p.values[i] : _servos[i].value,
+        ),
     ];
     notifyListeners();
-    _send('PRESET ${p.label}');
+    for (var i = 0; i < _servos.length; i++) {
+      // Small delay between servo commands to prevent serial buffer overflow
+      Timer(Duration(milliseconds: i * 50), () {
+        _send('${_servos[i].id} ${_servos[i].value}\n');
+      });
+    }
   }
 
   // ── Terminal ─────────────────────────────────────────────────────────────────
 
-  void sendRawCommand(String cmd) => _send(cmd);
+  void sendRawCommand(String cmd) {
+    if (!cmd.endsWith('\n')) {
+      cmd += '\n';
+    }
+    _send(cmd);
+  }
 
   // ── Internals ────────────────────────────────────────────────────────────────
 
@@ -237,6 +243,7 @@ class CtrlNotifier extends ChangeNotifier {
   }
 
   void _send(String cmd) {
+    if (!_connected) return;
     _addLog(LogType.out, cmd);
     _ble.sendCommand(cmd);
   }

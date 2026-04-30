@@ -1,62 +1,47 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'dart:typed_data';
+import 'package:flutter_bluetooth_serial_ble/flutter_bluetooth_serial_ble.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/ble_scan_result.dart';
 import 'ble_service.dart';
-
-// Nordic UART Service UUIDs — standard ESP32 BLE UART firmware.
-const _serviceUuid = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
-const _txCharUuid  = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'; // notify (ESP32 → phone)
-const _rxCharUuid  = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'; // write  (phone → ESP32)
 
 class RealBleService implements BleService {
   final _connController = StreamController<bool>.broadcast();
   final _respController = StreamController<String>.broadcast();
   final _scanController = StreamController<List<BleScanResult>>.broadcast();
 
-  BluetoothDevice? _device;
-  BluetoothCharacteristic? _rxChar;
-  StreamSubscription<List<int>>? _notifySub;
-  StreamSubscription<BluetoothConnectionState>? _stateSub;
-  StreamSubscription<List<ScanResult>>? _scanSub;
+  BluetoothConnection? _connection;
+  StreamSubscription<BluetoothDiscoveryResult>? _scanSub;
 
-  // Cache discovered devices so connectTo can look up BluetoothDevice by ID.
   final _scannedDevices = <String, BluetoothDevice>{};
-
   bool _connected = false;
 
-  @override Stream<bool> get connectionStream => _connController.stream;
-  @override Stream<String> get responseStream => _respController.stream;
-  @override Stream<List<BleScanResult>> get scanStream => _scanController.stream;
-  @override bool get isConnected => _connected;
+  @override
+  Stream<bool> get connectionStream => _connController.stream;
+  @override
+  Stream<String> get responseStream => _respController.stream;
+  @override
+  Stream<List<BleScanResult>> get scanStream => _scanController.stream;
+  @override
+  bool get isConnected => _connected;
 
   Future<bool> _requestPermissions() async {
     if (Platform.isAndroid) {
       final results = await [
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
-        Permission.locationWhenInUse, // Required for BLE scan on Android < 12
+        Permission.locationWhenInUse,
       ].request();
       final btScan = results[Permission.bluetoothScan]?.isGranted ?? false;
-      final btConnect = results[Permission.bluetoothConnect]?.isGranted ?? false;
-      final location = results[Permission.locationWhenInUse]?.isGranted ?? false;
-      // Android 12+ needs BT perms; Android <12 needs location
+      final btConnect =
+          results[Permission.bluetoothConnect]?.isGranted ?? false;
+      final location =
+          results[Permission.locationWhenInUse]?.isGranted ?? false;
       return (btScan && btConnect) || location;
     }
-    // iOS: CoreBluetooth prompts automatically on first use.
     return true;
-  }
-
-  /// Resolves a human-readable name: advertisement name > platform name > short hex ID.
-  String _resolveName(ScanResult r) {
-    final adv = r.device.advName.trim();
-    if (adv.isNotEmpty) return adv;
-    final platform = r.device.platformName.trim();
-    if (platform.isNotEmpty) return platform;
-    final hex = r.device.remoteId.str.replaceAll(':', '').replaceAll('-', '');
-    return 'BLE·${hex.substring((hex.length - 6).clamp(0, hex.length))}';
   }
 
   @override
@@ -68,90 +53,100 @@ class RealBleService implements BleService {
     final seen = <String, BleScanResult>{};
 
     _scanSub?.cancel();
-    _scanSub = FlutterBluePlus.scanResults.listen((results) {
-      for (final r in results) {
-        final id = r.device.remoteId.str;
-        _scannedDevices[id] = r.device;
-        seen[id] = BleScanResult(
-          deviceId: id,
-          name: _resolveName(r),
-          rssi: r.rssi,
+
+    // First, let's get already bonded (paired) devices so they show up easily
+    try {
+      final bonded = await FlutterBluetoothSerial.instance.getBondedDevices();
+      for (final d in bonded) {
+        _scannedDevices[d.address] = d;
+        seen[d.address] = BleScanResult(
+          deviceId: d.address,
+          name: d.name ?? 'Unknown Device',
+          rssi: -50, // Fake RSSI for bonded devices
         );
       }
-      // Named devices first, then sort by signal strength within each group.
+      _scanController.add(seen.values.toList());
+    } catch (e) {
+      print("Error getting bonded devices: $e");
+    }
+
+    _scanSub = FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
+      final d = r.device;
+      _scannedDevices[d.address] = d;
+      seen[d.address] = BleScanResult(
+        deviceId: d.address,
+        name: d.name ?? 'Unknown Device',
+        rssi: r.rssi,
+      );
+
       final sorted = seen.values.toList()
         ..sort((a, b) {
-          final anamed = !a.name.startsWith('BLE·');
-          final bnamed = !b.name.startsWith('BLE·');
+          final anamed = a.name != 'Unknown Device';
+          final bnamed = b.name != 'Unknown Device';
           if (anamed != bnamed) return anamed ? -1 : 1;
           return b.rssi.compareTo(a.rssi);
         });
       _scanController.add(sorted);
     });
-
-    // Fire-and-forget: scan runs in background; stopScan() ends it early.
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 12)).ignore();
   }
 
   @override
   Future<void> stopScan() async {
     _scanSub?.cancel();
     _scanSub = null;
-    await FlutterBluePlus.stopScan();
+    await FlutterBluetoothSerial.instance.cancelDiscovery();
   }
 
   @override
   Future<void> connectTo(BleScanResult device) async {
-    final btDevice = _scannedDevices[device.deviceId]
-        ?? BluetoothDevice.fromId(device.deviceId);
+    try {
+      _connection = await BluetoothConnection.toAddress(device.deviceId);
+      _connected = true;
+      _connController.add(true);
 
-    _device = btDevice;
-    await _device!.connect(autoConnect: false);
-
-    _stateSub?.cancel();
-    _stateSub = _device!.connectionState.listen((state) {
-      final connected = state == BluetoothConnectionState.connected;
-      _connected = connected;
-      _connController.add(connected);
-    });
-
-    final services = await _device!.discoverServices();
-    for (final svc in services) {
-      if (svc.uuid == Guid(_serviceUuid)) {
-        for (final char in svc.characteristics) {
-          if (char.uuid == Guid(_rxCharUuid)) _rxChar = char;
-          if (char.uuid == Guid(_txCharUuid)) {
-            await char.setNotifyValue(true);
-            _notifySub?.cancel();
-            _notifySub = char.onValueReceived.listen((bytes) {
-              final msg = utf8.decode(bytes).trim();
-              if (msg.isNotEmpty) _respController.add(msg);
-            });
-          }
-        }
-      }
+      _connection!.input!
+          .listen((Uint8List data) {
+            final msg = utf8.decode(data).trim();
+            if (msg.isNotEmpty) _respController.add(msg);
+          })
+          .onDone(() {
+            _connected = false;
+            _connController.add(false);
+          });
+    } catch (e) {
+      _connected = false;
+      _connController.add(false);
+      print('Cannot connect, exception occurred: $e');
     }
   }
 
   @override
   Future<void> disconnect() async {
-    await _device?.disconnect();
+    await _connection?.close();
+    _connection = null;
     _connected = false;
     _connController.add(false);
   }
 
   @override
   Future<void> sendCommand(String command) async {
-    if (_rxChar == null || !_connected) return;
-    await _rxChar!.write(utf8.encode('$command\n'), withoutResponse: true);
+    if (_connection == null || !_connected) return;
+    try {
+      _connection!.output.add(
+        utf8.encode(command),
+      ); // Ensure newline isn't strictly required if ino looks for pure char
+      // But ino looks for exact char match: char cmd = (char)SerialBT.read();
+      // It handles 'F', 'B' etc. The .ino loop reads chars sequentially.
+      await _connection!.output.allSent;
+    } catch (e) {
+      print('Error sending: $e');
+    }
   }
 
   @override
   void dispose() {
-    _notifySub?.cancel();
-    _stateSub?.cancel();
     _scanSub?.cancel();
-    _device?.disconnect();
+    _connection?.close();
     _connController.close();
     _respController.close();
     _scanController.close();
