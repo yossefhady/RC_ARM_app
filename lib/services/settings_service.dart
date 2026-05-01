@@ -47,11 +47,11 @@ class SettingsService {
   }
 
   // Servo settings limits or names
-  int getServoMax(int id) => _prefs.getInt('servoMax_\$id') ?? 180;
-  int getServoMin(int id) => _prefs.getInt('servoMin_\$id') ?? 0;
+  int getServoMax(int id) => _prefs.getInt('servoMax_$id') ?? 180;
+  int getServoMin(int id) => _prefs.getInt('servoMin_$id') ?? 0;
 
   Future<void> setServoMax(int id, int val) =>
-      _prefs.setInt('servoMax_\$id', val);
+      _prefs.setInt('servoMax_$id', val);
   Future<void> setServoMin(int id, int val) =>
-      _prefs.setInt('servoMin_\$id', val);
+      _prefs.setInt('servoMin_$id', val);
 }

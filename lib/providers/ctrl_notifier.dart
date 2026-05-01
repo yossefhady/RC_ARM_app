@@ -53,6 +53,14 @@ class CtrlNotifier extends ChangeNotifier {
   Timer? _speedDebounce;
   String? _lastJoyCmd;
 
+  // Per-servo debounce so a fast slider drag does not flood the BLE link.
+  // Why: each servo command stalls the firmware briefly; spamming makes the
+  // arm jitter/panic. We send at most one command per ~80ms while sliding,
+  // then a final command on release.
+  static const Duration _servoDebounceDelay = Duration(milliseconds: 80);
+  final Map<int, Timer> _servoDebounce = {};
+  final Map<int, int> _lastSentServoValue = {};
+
   // ── Getters ──────────────────────────────────────────────────────────────────
   bool get connected => _connected;
   List<BleScanResult> get scanResults => List.unmodifiable(_scanResults);
@@ -198,10 +206,30 @@ class CtrlNotifier extends ChangeNotifier {
     _servos = next;
     _preset = null;
     notifyListeners();
+    _scheduleServoSend(idx, value);
   }
 
   void endServo(int idx, int value) {
-    setServo(idx, value);
+    final next = [..._servos];
+    next[idx] = next[idx].copyWith(value: value);
+    _servos = next;
+    _preset = null;
+    notifyListeners();
+    _flushServoSend(idx, value);
+  }
+
+  void _scheduleServoSend(int idx, int value) {
+    _servoDebounce[idx]?.cancel();
+    _servoDebounce[idx] = Timer(_servoDebounceDelay, () {
+      _flushServoSend(idx, value);
+    });
+  }
+
+  void _flushServoSend(int idx, int value) {
+    _servoDebounce[idx]?.cancel();
+    _servoDebounce.remove(idx);
+    if (_lastSentServoValue[idx] == value) return;
+    _lastSentServoValue[idx] = value;
     _send('${_servos[idx].id} $value\n');
   }
 
@@ -275,6 +303,10 @@ class CtrlNotifier extends ChangeNotifier {
     _scanSub?.cancel();
     _scanTimer?.cancel();
     _speedDebounce?.cancel();
+    for (final t in _servoDebounce.values) {
+      t.cancel();
+    }
+    _servoDebounce.clear();
     _ble.dispose();
     super.dispose();
   }

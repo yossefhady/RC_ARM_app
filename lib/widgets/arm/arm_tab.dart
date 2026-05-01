@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/arm_preset.dart';
 import '../../models/servo_model.dart';
 import '../../providers/ctrl_notifier.dart';
 import '../../theme/app_colors.dart';
@@ -25,13 +26,52 @@ class ArmTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('SERVOS · 6-DOF', style: AppText.label(letterSpacing: 0.22)),
-              Text(
-                '● LIVE',
-                style: AppText.mono(
-                  fontSize: 10,
-                  color: AppColors.accent,
-                  letterSpacing: 0.1,
-                ),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => _showSaveDialog(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.accent),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.save_outlined,
+                            size: 12,
+                            color: AppColors.accent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'SAVE',
+                            style: AppText.mono(
+                              fontSize: 10,
+                              weight: FontWeight.w600,
+                              color: AppColors.accent,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '● LIVE',
+                    style: AppText.mono(
+                      fontSize: 10,
+                      color: AppColors.accent,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -41,6 +81,233 @@ class ArmTab extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showSaveDialog(BuildContext context) async {
+    final notifier = context.read<CtrlNotifier>();
+    final presets = notifier.settings.loadedPresets;
+    final result = await showDialog<_SaveTarget>(
+      context: context,
+      builder: (ctx) => _SavePresetDialog(presets: presets),
+    );
+    if (result == null) return;
+    if (result.isNew) {
+      final id = 'preset_${DateTime.now().millisecondsSinceEpoch}';
+      await notifier.saveCurrentPosToPreset(id, result.label);
+    } else {
+      await notifier.saveCurrentPosToPreset(result.id!, result.label);
+    }
+  }
+}
+
+class _SaveTarget {
+  final String? id;
+  final String label;
+  final bool isNew;
+  const _SaveTarget.update(this.id, this.label) : isNew = false;
+  const _SaveTarget.create(this.label) : id = null, isNew = true;
+}
+
+class _SavePresetDialog extends StatefulWidget {
+  final List<ArmPreset> presets;
+  const _SavePresetDialog({required this.presets});
+
+  @override
+  State<_SavePresetDialog> createState() => _SavePresetDialogState();
+}
+
+class _SavePresetDialogState extends State<_SavePresetDialog> {
+  late String _selectedId;
+  bool _createNew = false;
+  late TextEditingController _labelCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedId = widget.presets.isNotEmpty ? widget.presets.first.id : '';
+    _labelCtrl = TextEditingController(
+      text: widget.presets.isNotEmpty ? widget.presets.first.label : 'NEW',
+    );
+  }
+
+  @override
+  void dispose() {
+    _labelCtrl.dispose();
+    super.dispose();
+  }
+
+  void _selectPreset(String id) {
+    final p = widget.presets.firstWhere((e) => e.id == id);
+    setState(() {
+      _createNew = false;
+      _selectedId = id;
+      _labelCtrl.text = p.label;
+    });
+  }
+
+  void _selectNew() {
+    setState(() {
+      _createNew = true;
+      _labelCtrl.text = 'NEW PRESET';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(
+        'SAVE CURRENT ANGLES',
+        style: AppText.mono(
+          fontSize: 14,
+          color: AppColors.accent,
+          weight: FontWeight.bold,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Overwrite a preset',
+            style: AppText.label(fontSize: 10, letterSpacing: 0.2),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...widget.presets.map((p) {
+                final active = !_createNew && _selectedId == p.id;
+                return GestureDetector(
+                  onTap: () => _selectPreset(p.id),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? AppColors.accent.withValues(alpha: 0.18)
+                          : AppColors.surfaceDeep,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: active ? AppColors.accent : AppColors.border,
+                      ),
+                    ),
+                    child: Text(
+                      p.label,
+                      style: AppText.mono(
+                        fontSize: 11,
+                        color: active
+                            ? AppColors.accent
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              GestureDetector(
+                onTap: _selectNew,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _createNew
+                        ? AppColors.accent.withValues(alpha: 0.18)
+                        : AppColors.surfaceDeep,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _createNew
+                          ? AppColors.accent
+                          : AppColors.border,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add,
+                        size: 12,
+                        color: _createNew
+                            ? AppColors.accent
+                            : AppColors.textPrimary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'NEW',
+                        style: AppText.mono(
+                          fontSize: 11,
+                          color: _createNew
+                              ? AppColors.accent
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Label',
+            style: AppText.label(fontSize: 10, letterSpacing: 0.2),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 38,
+            child: TextField(
+              controller: _labelCtrl,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                filled: true,
+                fillColor: AppColors.surfaceDeep,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'CANCEL',
+            style: AppText.mono(fontSize: 11, color: AppColors.textMuted),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            final label = _labelCtrl.text.trim().isEmpty
+                ? 'PRESET'
+                : _labelCtrl.text.trim().toUpperCase();
+            Navigator.of(context).pop(
+              _createNew
+                  ? _SaveTarget.create(label)
+                  : _SaveTarget.update(_selectedId, label),
+            );
+          },
+          child: Text(
+            'SAVE',
+            style: AppText.mono(
+              fontSize: 11,
+              color: AppColors.accent,
+              weight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
