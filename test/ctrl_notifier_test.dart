@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app/models/arm_preset.dart';
 import 'package:app/models/ble_scan_result.dart';
 import 'package:app/providers/ctrl_notifier.dart';
 import 'package:app/services/ble_service.dart';
@@ -121,6 +122,73 @@ void main() {
       expect(ble.sent, hasLength(2));
       // Servo IDs map: index 0 → id 1, index 1 → id 2.
       expect(ble.sent.map((e) => e.trim()), containsAll(['1 50', '2 60']));
+    });
+  });
+
+  group('applyPreset clamping', () {
+    test('returns null when all values are within limits', () async {
+      final preset = ArmPreset(
+        id: 'home',
+        label: 'HOME',
+        values: [90, 90, 90, 90, 90],
+      );
+      final warning = notifier.applyPreset(preset);
+      expect(warning, isNull);
+    });
+
+    test('clamps over-max value and returns warning', () async {
+      await notifier.settings.setServoMax(1, 150);
+      final preset = ArmPreset(
+        id: 'grab',
+        label: 'GRAB',
+        values: [160, 90, 90, 90, 90],
+      );
+      final warning = notifier.applyPreset(preset);
+      expect(notifier.servos[0].value, 150);
+      expect(warning, contains('S1'));
+      expect(warning, contains('160°'));
+      expect(warning, contains('max 150'));
+    });
+
+    test('clamps under-min value and returns warning', () async {
+      await notifier.settings.setServoMin(2, 30);
+      final preset = ArmPreset(
+        id: 'rest',
+        label: 'REST',
+        values: [90, 10, 90, 90, 90],
+      );
+      final warning = notifier.applyPreset(preset);
+      expect(notifier.servos[1].value, 30);
+      expect(warning, contains('S2'));
+      expect(warning, contains('10°'));
+      expect(warning, contains('min 30'));
+    });
+
+    test('sends clamped value to BLE, not raw preset value', () async {
+      await notifier.settings.setServoMax(1, 150);
+      final preset = ArmPreset(
+        id: 'grab',
+        label: 'GRAB',
+        values: [160, 90, 90, 90, 90],
+      );
+      ble.sent.clear();
+      notifier.applyPreset(preset);
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      expect(ble.sent.any((cmd) => cmd.trim() == '1 150'), isTrue);
+      expect(ble.sent.any((cmd) => cmd.trim() == '1 160'), isFalse);
+    });
+
+    test('multiple clamped servos all appear in warning', () async {
+      await notifier.settings.setServoMax(1, 100);
+      await notifier.settings.setServoMin(2, 50);
+      final preset = ArmPreset(
+        id: 'custom',
+        label: 'CUSTOM',
+        values: [120, 20, 90, 90, 90],
+      );
+      final warning = notifier.applyPreset(preset);
+      expect(warning, contains('S1'));
+      expect(warning, contains('S2'));
     });
   });
 

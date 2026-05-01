@@ -60,6 +60,7 @@ class CtrlNotifier extends ChangeNotifier {
   static const Duration _servoDebounceDelay = Duration(milliseconds: 80);
   final Map<int, Timer> _servoDebounce = {};
   final Map<int, int> _lastSentServoValue = {};
+  final List<Timer> _presetTimers = [];
 
   // ── Getters ──────────────────────────────────────────────────────────────────
   bool get connected => _connected;
@@ -249,21 +250,42 @@ class CtrlNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void applyPreset(ArmPreset p) {
+  /// Applies [p] and returns a warning string when any angle was clamped to
+  /// a servo's configured min/max limit, or null when all values fit.
+  String? applyPreset(ArmPreset p) {
     _preset = p.id;
+    final violations = <String>[];
+
     _servos = [
       for (var i = 0; i < _servos.length; i++)
-        _servos[i].copyWith(
-          value: i < p.values.length ? p.values[i] : _servos[i].value,
-        ),
+        () {
+          final servo = _servos[i];
+          final raw = i < p.values.length ? p.values[i] : servo.value;
+          final lo = settings.getServoMin(servo.id);
+          final hi = settings.getServoMax(servo.id);
+          final clamped = raw.clamp(lo, hi);
+          if (clamped != raw) {
+            final dir = raw > hi ? 'max $hi' : 'min $lo';
+            violations.add('S${servo.id} $raw° → $dir');
+          }
+          return servo.copyWith(value: clamped);
+        }(),
     ];
+
     notifyListeners();
-    for (var i = 0; i < _servos.length; i++) {
-      // Small delay between servo commands to prevent serial buffer overflow
-      Timer(Duration(milliseconds: i * 50), () {
-        _send('${_servos[i].id} ${_servos[i].value}\n');
-      });
+
+    for (final t in _presetTimers) {
+      t.cancel();
     }
+    _presetTimers.clear();
+    for (var i = 0; i < _servos.length; i++) {
+      _presetTimers.add(Timer(Duration(milliseconds: i * 50), () {
+        _send('${_servos[i].id} ${_servos[i].value}\n');
+      }));
+    }
+
+    if (violations.isEmpty) return null;
+    return 'Clamped to limits: ${violations.join(' · ')}';
   }
 
   // ── Terminal ─────────────────────────────────────────────────────────────────
@@ -307,6 +329,10 @@ class CtrlNotifier extends ChangeNotifier {
       t.cancel();
     }
     _servoDebounce.clear();
+    for (final t in _presetTimers) {
+      t.cancel();
+    }
+    _presetTimers.clear();
     _ble.dispose();
     super.dispose();
   }

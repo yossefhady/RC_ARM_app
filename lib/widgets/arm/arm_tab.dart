@@ -332,7 +332,42 @@ class _PresetGrid extends StatelessWidget {
       children: presets.map((p) {
         final active = preset == p.id;
         return GestureDetector(
-          onTap: () => context.read<CtrlNotifier>().applyPreset(p),
+          onTap: () {
+                    final warning =
+                        context.read<CtrlNotifier>().applyPreset(p);
+                    if (warning != null && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                size: 16,
+                                color: AppColors.warning,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  warning,
+                                  style: AppText.mono(
+                                    fontSize: 11,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppColors.warningBg,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: const BorderSide(color: AppColors.warning),
+                          ),
+                        ),
+                      );
+                    }
+                  },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
