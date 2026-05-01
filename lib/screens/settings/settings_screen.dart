@@ -114,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 32),
           _SectionHeader('SERVO LIMITS (0-180)'),
           ...[1, 2, 4, 5, 6].map((sId) {
@@ -145,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -251,6 +251,81 @@ class _NumberField extends StatelessWidget {
             borderSide: BorderSide.none,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: AppText.mono(
+          fontSize: 14,
+          color: AppColors.accent,
+          weight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Function(String) onChanged;
+
+  const _SettingRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: SizedBox(
+              height: 36,
+              child: TextFormField(
+                initialValue: value,
+                onChanged: onChanged,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

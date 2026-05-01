@@ -67,7 +67,7 @@ class RealBleService implements BleService {
       }
       _scanController.add(seen.values.toList());
     } catch (e) {
-      print("Error getting bonded devices: $e");
+      // Error handled silently
     }
 
     _scanSub = FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
@@ -116,7 +116,7 @@ class RealBleService implements BleService {
     } catch (e) {
       _connected = false;
       _connController.add(false);
-      print('Cannot connect, exception occurred: $e');
+      // Connection failed, controller notified
     }
   }
 
@@ -139,7 +139,7 @@ class RealBleService implements BleService {
       // It handles 'F', 'B' etc. The .ino loop reads chars sequentially.
       await _connection!.output.allSent;
     } catch (e) {
-      print('Error sending: $e');
+      // Send failed, error ignored
     }
   }
 
